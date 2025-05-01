@@ -5,20 +5,28 @@ DELIMITER $$
 
 CREATE PROCEDURE ComputeAverageWeightedScoreForUsers()
 BEGIN
-    DECLARE done INT DEFAULT FALSE;
+    DECLARE done INT DEFAULT 0;
     DECLARE uid INT;
     DECLARE cur CURSOR FOR SELECT id FROM users;
-    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
 
     OPEN cur;
 
-    read_loop: LOOP
+    user_loop: LOOP
         FETCH cur INTO uid;
         IF done THEN
-            LEAVE read_loop;
+            LEAVE user_loop;
         END IF;
 
-        CALL ComputeAverageWeightedScoreForUser(uid);
+        UPDATE users
+        SET average_score = (
+            SELECT ROUND(SUM(c.score * p.weight) / SUM(p.weight), 4)
+            FROM corrections c
+            JOIN projects p ON c.project_id = p.id
+            WHERE c.user_id = uid
+        )
+        WHERE id = uid;
+
     END LOOP;
 
     CLOSE cur;
