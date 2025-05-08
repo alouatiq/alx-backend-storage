@@ -1,2 +1,2 @@
 // my comment
-print(db.school.countDocuments({ name: "ALX" }))
+db.school.find({ name: "ALX" }).forEach(printjson)
